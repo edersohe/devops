@@ -25,3 +25,16 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`whoami.edersohe.dev`)"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
+  gitea:
+    image: gitea/gitea:1.14
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    volumes:
+      - ./gitea:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitea.rule=Host(`gitea.edersohe.dev`)"
+      - "traefik.http.services.gitea.loadbalancer.server.port=3000"
+
