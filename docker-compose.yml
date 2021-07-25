@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  reverse-proxy:
+  proxy:
     image: traefik:v2.4
     command: --api --providers.docker --providers.docker.exposedbydefault=false --providers.file.directory=/etc/traefik --providers.file.watch=true --entrypoints.websecure.address=:443 --entrypoints.websecure.http.tls=true
     ports:
@@ -11,11 +11,11 @@ services:
       - ./traefik:/etc/traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.edersohe.dev`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik.rule=Host(`proxy.edersohe.dev`) && PathPrefix(`/api`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.edersohe.dev`)"
+      - "traefik.http.routers.dashboard.rule=Host(`proxy.edersohe.dev`)"
       - "traefik.http.routers.dashboard.service=dashboard@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
@@ -25,7 +25,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`whoami.edersohe.dev`)"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
-  gitea:
+  git:
     image: gitea/gitea:1.14
     environment:
       - USER_UID=1000
@@ -35,6 +35,6 @@ services:
       - ./gitea:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gitea.rule=Host(`gitea.edersohe.dev`)"
-      - "traefik.http.services.gitea.loadbalancer.server.port=3000"
+      - "traefik.http.routers.git.rule=Host(`git.edersohe.dev`)"
+      - "traefik.http.services.git.loadbalancer.server.port=3000"
 
