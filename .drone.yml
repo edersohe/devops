@@ -2,6 +2,12 @@
 kind: pipeline
 name: default
 
+
+clone:
+  extra_hosts:
+    - "git.ops.dev:192.168.1.8"
+
+
 steps:
 - name: test
   image: python
