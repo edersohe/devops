@@ -1,3 +1,4 @@
+** WORK IN PROGRESS
 
 *** Generate random secret for drone
 
@@ -5,15 +6,31 @@
 openssl rand -hex 16
 ```
 
-curl --cacert traefik/certs/ca-cert.pem https://whoami.edersohe.dev
-git clone -c http.sslCAInfo=traefik/certs/ca-cert.pem https://gitea.edersohe.dev/edersohe/test.git
+*** Make certificates 
+
+```
+mkdir certificates 
+cd certificates
+mkcert -install 
+mkcert -CAROOT
+mkcert ops.dev *.ops.dev
+``` 
+
+*** Check services
+
+curl --cacert  $(mkcert -CAROOT)/rootCA.pem https://whoami.ops.dev
+git clone -c http.sslCAInfo=$(mkcert -CAROOT)/rootCA.pem https://gitea.ops.dev/edersohe/test.git
+
+*** DONE
 
 * traefik
-* coredns
 * gitea
 * drone
+
+*** TODO
+
 * sentry
-* portus
-* minio
+* docker registry
 * rocket.chat
-* prometheus
+* minio
+* prometheus + graphana
