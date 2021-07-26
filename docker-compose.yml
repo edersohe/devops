@@ -20,12 +20,22 @@ services:
       - "traefik.http.routers.dashboard.service=dashboard@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
+    networks:
+      devops:
+        aliases:
+          - proxy.ops.dev
+          - whoami.ops.dev
+          - git.ops.dev
+          - ci.ops.dev
+          - agent.ops.dev
   whoami:
     image: traefik/whoami
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`whoami.ops.dev`)"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
+    networks:
+      - devops
   git:
     image: gitea/gitea:1.14
     environment:
@@ -38,6 +48,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.git.rule=Host(`git.ops.dev`)"
       - "traefik.http.services.git.loadbalancer.server.port=3000"
+    networks:
+      - devops
   ci:
     image: drone/drone:2
     restart: always
@@ -46,33 +58,44 @@ services:
       - DRONE_GITEA_CLIENT_ID=e2f83605-298e-4e68-abb3-50fa82f1be77
       - DRONE_GITEA_CLIENT_SECRET=q_HuJyVUIdPjn8dDgn8y2TWaTfIbI-YE3YRs0G_qR04=
       - DRONE_GITEA_SKIP_VERIFY=true
+      - DRONE_GIT_ALWAYS_AUTH=true
       - DRONE_RPC_SECRET=e900d9cf1ad5feff8fcc30da29798af2
       - DRONE_SERVER_HOST=ci.ops.dev
       - DRONE_SERVER_PROTO=https
       - DRONE_REGISTRATION_CLOSED=true
+      - DRONE_USER_CREATE=username:edersohe,admin:true
     volumes:
       - ./drone:/data
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ci.rule=Host(`ci.ops.dev`)"
       - "traefik.http.services.ci.loadbalancer.server.port=80"
-    extra_hosts:
-      - "git.ops.dev:172.21.0.1"
-  runner:
+    networks:
+      - devops
+  agent:
     image: drone/drone-runner-docker:1
     restart: always
     environment:
-      - DRONE_RPC_PROTO=http
-      - DRONE_RPC_HOST=ci
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_HOST=ci.ops.dev
       - DRONE_RPC_SECRET=e900d9cf1ad5feff8fcc30da29798af2
+      - DRONE_RPC_SKIP_VERIFY=true
       - DRONE_RUNNER_CAPACITY=2
-      - DRONE_RUNNER_NAME=runner
+      - DRONE_RUNNER_NAME=agent
+      - DRONE_RUNNER_NETWORKS=devops_devops
+      - DRONE_RUNNER_ENVIRON=GIT_SSL_NO_VERIFY:true
       - DRONE_UI_USERNAME=root
       - DRONE_UI_PASSWORD=root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.runner.rule=Host(`runner.ops.dev`)"
+      - "traefik.http.routers.runner.rule=Host(`agent.ops.dev`)"
       - "traefik.http.services.runner.loadbalancer.server.port=3000"
+    networks:
+      - devops
+
+networks:
+  devops:
+    driver: bridge
 

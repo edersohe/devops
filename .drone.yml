@@ -3,20 +3,13 @@ kind: pipeline
 name: default
 
 
-clone:
-  extra_hosts:
-    - "git.ops.dev:192.168.1.8"
-
-
 steps:
 - name: test
   image: python
   commands:
-  - ping -c3 git.ops.dev 
   - cd example
-  - pip install pipenv
-  - pipenv install
-  - pipenv run coverage run --source=. -m pytest
-  - pipenv run coverage report -m
-  - pipenv run coverage html
+  - pip install -r requirements-dev.txt
+  - coverage run -m pytest
+  - coverage report -m
+  - coverage html
 
