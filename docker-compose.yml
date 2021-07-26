@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  proxy:
+  traefik:
     image: traefik:v2.4
     command: --api --providers.docker --providers.docker.exposedbydefault=false --providers.file.directory=/etc/traefik --providers.file.watch=true --entrypoints.websecure.address=:443 --entrypoints.websecure.http.tls=true
     ports:
@@ -12,22 +12,22 @@ services:
       - ./traefik:/etc/traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`proxy.ops.dev`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.ops.dev`) && PathPrefix(`/api`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
-      - "traefik.http.routers.dashboard.rule=Host(`proxy.ops.dev`)"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.ops.dev`)"
       - "traefik.http.routers.dashboard.service=dashboard@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.services.dashboard.loadbalancer.server.port=8080"
     networks:
       devops:
         aliases:
-          - proxy.ops.dev
+          - traefik.ops.dev
           - whoami.ops.dev
-          - git.ops.dev
-          - ci.ops.dev
-          - agent.ops.dev
+          - gitea.ops.dev
+          - drone.ops.dev
+          - runner.ops.dev
   whoami:
     image: traefik/whoami
     labels:
@@ -36,7 +36,7 @@ services:
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
     networks:
       - devops
-  git:
+  gitea:
     image: gitea/gitea:1.14
     environment:
       - USER_UID=1000
@@ -46,21 +46,21 @@ services:
       - ./gitea:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.git.rule=Host(`git.ops.dev`)"
-      - "traefik.http.services.git.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gitea.rule=Host(`gitea.ops.dev`)"
+      - "traefik.http.services.gitea.loadbalancer.server.port=3000"
     networks:
       - devops
-  ci:
+  drone:
     image: drone/drone:2
     restart: always
     environment:
-      - DRONE_GITEA_SERVER=https://git.ops.dev
+      - DRONE_GITEA_SERVER=https://gitea.ops.dev
       - DRONE_GITEA_CLIENT_ID=e2f83605-298e-4e68-abb3-50fa82f1be77
       - DRONE_GITEA_CLIENT_SECRET=q_HuJyVUIdPjn8dDgn8y2TWaTfIbI-YE3YRs0G_qR04=
       - DRONE_GITEA_SKIP_VERIFY=true
       - DRONE_GIT_ALWAYS_AUTH=true
       - DRONE_RPC_SECRET=e900d9cf1ad5feff8fcc30da29798af2
-      - DRONE_SERVER_HOST=ci.ops.dev
+      - DRONE_SERVER_HOST=drone.ops.dev
       - DRONE_SERVER_PROTO=https
       - DRONE_REGISTRATION_CLOSED=true
       - DRONE_USER_CREATE=username:edersohe,admin:true
@@ -68,29 +68,29 @@ services:
       - ./drone:/data
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.ci.rule=Host(`ci.ops.dev`)"
-      - "traefik.http.services.ci.loadbalancer.server.port=80"
+      - "traefik.http.routers.drone.rule=Host(`drone.ops.dev`)"
+      - "traefik.http.services.drone.loadbalancer.server.port=80"
     networks:
       - devops
-  agent:
+  runner:
     image: drone/drone-runner-docker:1
     restart: always
     environment:
       - DRONE_RPC_PROTO=https
-      - DRONE_RPC_HOST=ci.ops.dev
+      - DRONE_RPC_HOST=drone.ops.dev
       - DRONE_RPC_SECRET=e900d9cf1ad5feff8fcc30da29798af2
       - DRONE_RPC_SKIP_VERIFY=true
       - DRONE_RUNNER_CAPACITY=2
-      - DRONE_RUNNER_NAME=agent
+      - DRONE_RUNNER_NAME=runner
       - DRONE_RUNNER_NETWORKS=devops_devops
       - DRONE_RUNNER_ENVIRON=GIT_SSL_NO_VERIFY:true
-      - DRONE_UI_USERNAME=root
-      - DRONE_UI_PASSWORD=root
+      - DRONE_UI_USERNAME=edersohe
+      - DRONE_UI_PASSWORD='TMtY@HubO762LOyiX%Wswh#ax2wF0sF*'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.runner.rule=Host(`agent.ops.dev`)"
+      - "traefik.http.routers.runner.rule=Host(`runner.ops.dev`)"
       - "traefik.http.services.runner.loadbalancer.server.port=3000"
     networks:
       - devops
