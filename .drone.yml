@@ -5,8 +5,6 @@ name: default
 steps:
 - name: test
   image: python
-  extra_hosts: 
-    - "git.ops.dev:172.21.0.1"
   commands:
   - ping -c3 git.ops.dev 
   - cd example
