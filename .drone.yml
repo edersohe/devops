@@ -5,6 +5,8 @@ name: default
 steps:
 - name: test
   image: python
+  extra_hosts: 
+    - "git.ops.dev:172.21.0.1"
   commands:
   - cd example
   - pip install pipenv
