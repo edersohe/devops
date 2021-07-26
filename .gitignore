@@ -1,2 +1,4 @@
 
-traefik/certs/
+certificates/
+gitea/
+drone/
