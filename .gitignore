@@ -2,3 +2,6 @@
 certificates/
 gitea/
 drone/
+.pytest_cache/
+.coverage
+htmlcov

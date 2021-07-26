@@ -1,0 +1,15 @@
+---
+kind: pipeline
+name: default
+
+steps:
+- name: test
+  image: python
+  commands:
+  - cd example
+  - pip install pipenv
+  - pipenv install
+  - pipenv run coverage run --source=. -m pytest
+  - pipenv run coverage report -m
+  - pipenv run coverage html
+
