@@ -12,4 +12,10 @@ steps:
   - coverage run -m pytest
   - coverage report -m
   - coverage html
-
+- name: send telegram notification
+  image: appleboy/drone-telegram
+  settings:
+    token:
+      from_secret: telegram_bot_token
+    to:
+      from_secret: telegram_chat_id
