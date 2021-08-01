@@ -28,6 +28,7 @@ services:
           - gitea.ops.dev
           - drone.ops.dev
           - runner.ops.dev
+          - chat.ops.dev
   whoami:
     image: traefik/whoami
     labels:
@@ -72,7 +73,7 @@ services:
       - "traefik.http.services.drone.loadbalancer.server.port=80"
     networks:
       - devops
-  runner:
+  drone-runner:
     image: drone/drone-runner-docker:1
     restart: always
     environment:
@@ -92,6 +93,58 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.runner.rule=Host(`runner.ops.dev`)"
       - "traefik.http.services.runner.loadbalancer.server.port=3000"
+    networks:
+      - devops
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:latest
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          node main.js &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    restart: unless-stopped
+    volumes:
+      - ./rocketchat/uploads:/app/uploads
+    environment:
+      - PORT=3000
+      - ROOT_URL=https://chat.ops.dev
+      - MONGO_URL=mongodb://rocketchat-mongo:27017/rocketchat
+      - MONGO_OPLOG_URL=mongodb://rocketchat-mongo:27017/local
+      - NODE_TLS_REJECT_UNAUTHORIZED=0 
+    depends_on:
+      - rocketchat-mongo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.rule=Host(`chat.ops.dev`)"
+      - "traefik.http.services.chat.loadbalancer.server.port=3000"
+    networks:
+      - devops
+  rocketchat-mongo:
+    image: mongo:4.0
+    restart: unless-stopped
+    volumes:
+     - ./rocketchat/mongo:/data/db
+    command: mongod --smallfiles --oplogSize 128 --replSet rs0 --storageEngine=mmapv1
+    networks:
+      - devops
+  mongo-init-replica:
+    image: mongo:4.0
+    command: >
+      bash -c
+        "for i in `seq 1 30`; do
+          mongo rocketchat-mongo/rocketchat --eval \"
+            rs.initiate({
+              _id: 'rs0',
+              members: [ { _id: 0, host: 'localhost:27017' } ]})\" &&
+          s=$$? && break || s=$$?;
+          echo \"Tried $$i times. Waiting 5 secs...\";
+          sleep 5;
+        done; (exit $$s)"
+    depends_on:
+      - rocketchat-mongo
     networks:
       - devops
 

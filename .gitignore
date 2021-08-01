@@ -6,3 +6,5 @@ drone/
 .coverage
 htmlcov
 __pycache__
+
+rocketchat/
